@@ -1,0 +1,85 @@
+#!/usr/bin/python26
+
+import	os
+import	sys
+
+class	Unsplit( object ):
+
+	CHUNKSIZE = (1024 * 16)
+
+	def	__init__( self ):
+		self.numeric = False
+		self.prefix  = 'x'
+		self.major   = 'a'
+		self.minor   = 'a'
+		self.out     = sys.stdout
+		return
+
+	def	output_to( self, name ):
+		self.out = open( name, 'wb' )
+		return
+
+	def	do_open_file( self, f = sys.stdin ):
+		try:
+			while True:
+				chunk = f.read( Unsplit.CHUNKSIZE )
+				if chunk == "":
+					break
+				self.out.write( chunk )
+		except:
+			pass
+		return
+
+	def	do_file( self, name ):
+		if self.numeric:
+			tail = '_%sXX' % (
+				self.prefix
+			)
+		else:
+			tail = '_%s%s%s' % (
+				self.prefix,
+				self.major,
+				self.minor
+			)
+		if not name.endswith( tail ):
+			print >>sys.stderr, 'Chunk "%s" is missing; got "%s".' % (
+				tail,
+				name
+			)
+			sys.exit(1)
+		print >>sys.stderr, '--> %s' % name
+		with open( name, 'rb' ) as f:
+			self.do_open_file( f )
+		if self.numeric:
+			pass
+		else:
+			self.minor = chr( ord(self.minor) + 1 )
+			if self.minor > 'z':
+				self.major = chr( ord(self.major) + 1 )
+				self.minor = 'a'
+		return
+
+	def	do_dir( self, dn ):
+		files = os.listdir( dn )
+		for file in sorted( files ):
+			self.do_name( os.path.join( dn, file ) )
+		return
+
+	def	do_name( self, name ):
+		if os.path.isfile( name ):
+			self.do_file( name )
+		elif os.path.isdir( name ):
+			self.do_dir( name )
+		else:
+			print >>sys.stderr, "Huh?  What's '%s'?" % name
+		return
+
+if __name__ == '__main__':
+	us = Unsplit()
+	us.output_to( 'stuff' )
+	if len(sys.argv) == 1:
+		us.do_open_file()
+	else:
+		for name in sys.argv[1:]:
+			us.do_name( name )
+	sys.exit(0)
